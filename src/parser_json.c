@@ -1633,8 +1633,15 @@ lydjson_subtree_r(struct lyd_json_ctx *lydctx, struct lyd_node *parent, struct l
 
         goto node_parsed;
     } else if (!is_meta || name_len || prefix_len) {
-        /* get the schema node */
-        r = lydjson_get_snode(lydctx, is_meta, prefix, prefix_len, name, name_len, parent, &snode, &ext);
+        if (parent && !parent->schema && (((struct lyd_node_opaq *)parent)->name.name[0] == '@')) {
+            /* parent is a metadata container, children must be metadata attributes (opaque nodes) */
+            snode = NULL;
+            ext = NULL;
+            r = LY_SUCCESS;
+        } else {
+            /* get the schema node */
+            r = lydjson_get_snode(lydctx, is_meta, prefix, prefix_len, name, name_len, parent, &snode, &ext);
+        }
         if (r == LY_ENOT) {
             /* data parsed */
             goto cleanup;
